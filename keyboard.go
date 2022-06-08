@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/eiannone/keyboard"
 	"time"
 )
 
@@ -29,7 +30,12 @@ func (dt *DefaultTicker) Stop() {
 }
 
 type Keyboard struct {
-	keystrokes chan int
+	keystrokes <-chan keyboard.KeyEvent
+}
+
+func NewKeyboard() *Keyboard {
+	keystrokes, _ := keyboard.GetKeys(10) // TODO: say, do I need to test it?
+	return &Keyboard{keystrokes}
 }
 
 func (k *Keyboard) Strokes(tick Ticker) <-chan int {
@@ -55,4 +61,9 @@ func (k *Keyboard) Strokes(tick Ticker) <-chan int {
 		}
 	}()
 	return ch
+}
+
+func (k *Keyboard) Close() error {
+	err := keyboard.Close()
+	return err // TODO: wrap error
 }

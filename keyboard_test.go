@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/eiannone/keyboard"
 	"reflect"
 	"testing"
 	"time"
@@ -13,7 +14,7 @@ func TestStrokes(t *testing.T) {
 		want := []int{2, 5, 6}
 
 		// Create a fake channel through which keystrokes will be sent
-		keyChan := make(chan int, 6)
+		keyChan := make(chan keyboard.KeyEvent, 6)
 		kb := Keyboard{keystrokes: keyChan}
 
 		strokeCount := kb.Strokes(NewDefaultTicker(0*time.Millisecond))
@@ -21,7 +22,7 @@ func TestStrokes(t *testing.T) {
 		// Simulate keystrokes being sent through the channel
 		for _, n := range want {
 			for i := 0; i < n; i++ {
-				keyChan <- n
+				keyChan <- keyboard.KeyEvent{}
 			}
 			// Strokes() should post count every 1s
 			got = append(got, <-strokeCount)
@@ -32,9 +33,10 @@ func TestStrokes(t *testing.T) {
 	})
 
 	t.Run("sends intervals at a specified rate", func(t *testing.T) {
-		// Create a fake channel through which keystrokes will be sent
-		keyChan := make(chan int, 6)
-		kb := Keyboard{keystrokes: keyChan}
+		kb := NewKeyboard()
+		defer func() {
+			_ = kb.Close()
+		}()
 
 		spyTicker := NewSpyTicker(10 * time.Millisecond)
 		kb.Strokes(spyTicker)
