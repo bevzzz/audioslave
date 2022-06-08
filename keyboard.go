@@ -4,14 +4,37 @@ import (
 	"time"
 )
 
+type Ticker interface {
+	Stop()
+	C() <-chan time.Time
+}
+
+type DefaultTicker struct{
+	t *time.Ticker
+}
+
+func NewDefaultTicker(interval time.Duration) *DefaultTicker {
+	if interval < time.Millisecond {
+		interval = time.Millisecond
+	}
+	return &DefaultTicker{time.NewTicker(interval)}
+}
+
+func (dt *DefaultTicker) C() <-chan time.Time {
+	return dt.t.C
+}
+
+func (dt *DefaultTicker) Stop() {
+	dt.t.Stop()
+}
+
 type Keyboard struct {
 	keystrokes chan int
 }
 
-func (k *Keyboard) Strokes(interval time.Duration) chan int {
-	ch := make(chan int, 2)
+func (k *Keyboard) Strokes(tick Ticker) <-chan int {
+	ch := make(chan int)
 	go func() {
-		tick := time.NewTicker(interval)
 		defer tick.Stop()
 
 		var counter int
@@ -22,7 +45,7 @@ func (k *Keyboard) Strokes(interval time.Duration) chan int {
 					ch <- counter
 				}
 				counter++
-			case <-tick.C:
+			case <-tick.C():
 				if counter == 0 {
 					continue
 				}
