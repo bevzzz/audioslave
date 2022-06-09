@@ -19,8 +19,12 @@ func main() {
 	volume := NewVolume(minKeyStrokesPerInterval)
 
 	for {
-		n := <-countStrokes
-		fmt.Printf("You've pressed %d keys in the past %vs -- ", n, tickInterval)
+		n, ok := <-countStrokes
+		if !ok {
+			fmt.Println("Got interrupted")
+			break
+		}
+		fmt.Printf("You've pressed %d keys in the past %v -- ", n, tickInterval)
 
 		volume.Adjust(n)
 

@@ -14,10 +14,7 @@ func TestStrokes(t *testing.T) {
 		want := []int{2, 5, 6}
 
 		// Create a fake channel through which keystrokes will be sent
-		keyChan := make(chan keyboard.KeyEvent, 6)
-		kb := Keyboard{keystrokes: keyChan}
-
-		strokeCount := kb.Strokes(NewDefaultTicker(0*time.Millisecond))
+		_, keyChan, strokeCount := createKeyboardWithFakeChannel(t)
 
 		// Simulate keystrokes being sent through the channel
 		for _, n := range want {
@@ -38,7 +35,7 @@ func TestStrokes(t *testing.T) {
 			_ = kb.Close()
 		}()
 
-		spyTicker := NewSpyTicker(10 * time.Millisecond)
+		spyTicker := NewSpyTicker(5 * time.Millisecond)
 		kb.Strokes(spyTicker)
 		time.Sleep(time.Millisecond)
 		spyTicker.Stop()
@@ -47,12 +44,48 @@ func TestStrokes(t *testing.T) {
 			t.Error("expected calls to ticker, but did not get any")
 		}
 	})
+
+	t.Run("count channel is closed after Ctrl+C", func(t *testing.T) {
+		_, keyChan, strokeCount := createKeyboardWithFakeChannel(t)
+
+		// Imitate sending 'interrupt event'
+		keyChan <- keyboard.KeyEvent{Key: keyboard.KeyCtrlC}
+
+		// Interrupt signal (-1) is sent
+		_, open := <-strokeCount
+		if open {
+			t.Error("the channel is open, expected closed")
+		}
+	})
+
+	t.Run("goroutine does not send on closed channel", func(t *testing.T) {
+		kb, keyChan, _ := createKeyboardWithFakeChannel(t)
+
+		// Imitate sending 'interrupt event'
+		keyChan <- keyboard.KeyEvent{Key: keyboard.KeyCtrlC}
+
+		// This should not cause panic
+		_ = kb.Close()
+	})
+}
+
+func createKeyboardWithFakeChannel(t testing.TB) (Keyboard, chan keyboard.KeyEvent, <-chan int) {
+	t.Helper()
+
+	// Create a fake channel through which keystrokes can be sent
+	keyChan := make(chan keyboard.KeyEvent)
+	kb := Keyboard{keystrokes: keyChan}
+
+	// Start stroke count
+	strokeCount := kb.Strokes(NewDefaultTicker(0 * time.Millisecond))
+
+	return kb, keyChan, strokeCount
 }
 
 type SpyTicker struct {
 	interval time.Duration
-	Calls int
-	c <-chan time.Time
+	Calls    int
+	c        <-chan time.Time
 }
 
 func NewSpyTicker(interval time.Duration) *SpyTicker {
@@ -63,7 +96,7 @@ func NewSpyTicker(interval time.Duration) *SpyTicker {
 
 	return &SpyTicker{
 		interval: interval,
-		c: c,
+		c:        c,
 	}
 }
 

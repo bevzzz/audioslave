@@ -10,7 +10,7 @@ type Ticker interface {
 	C() <-chan time.Time
 }
 
-type DefaultTicker struct{
+type DefaultTicker struct {
 	t *time.Ticker
 }
 
@@ -46,9 +46,10 @@ func (k *Keyboard) Strokes(tick Ticker) <-chan int {
 		var counter int
 		for {
 			select {
-			case _, ok := <-k.keystrokes:
-				if !ok {
-					ch <- counter
+			case ks, _ := <-k.keystrokes:
+				if ks.Key == keyboard.KeyCtrlC {
+					close(ch)
+					return
 				}
 				counter++
 			case <-tick.C():
