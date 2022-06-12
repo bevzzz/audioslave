@@ -15,23 +15,32 @@ func main() {
 	const tickInterval = 2 * time.Second
 	countStrokes := kb.Strokes(NewDefaultTicker(tickInterval))
 
-	const minKeyStrokesPerInterval = 5
-	volume := NewVolume(minKeyStrokesPerInterval)
+	vc := &SpyVolumeController{100}
+	volume := NewVolume(10*time.Second, 2*time.Second, vc)
 
 	for {
 		n, ok := <-countStrokes
 		if !ok {
 			fmt.Println("Got interrupted")
+			volume.Reset()
 			break
 		}
-		fmt.Printf("You've pressed %d keys in the past %v -- ", n, tickInterval)
+		fmt.Printf("You've pressed %d keys in the past %v\n", n, tickInterval)
 
 		volume.Adjust(n)
-
-		state := "Off"
-		if volume.On() {
-			state = "On"
-		}
-		fmt.Println("Sound", state)
 	}
+}
+
+
+type SpyVolumeController struct {
+	Volume int
+}
+
+func (s *SpyVolumeController) SetVolume(v int) {
+	fmt.Println("Setting volume", v)
+	s.Volume = v
+}
+
+func (s *SpyVolumeController) GetVolume() int {
+	return s.Volume
 }
