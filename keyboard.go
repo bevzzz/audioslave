@@ -53,9 +53,6 @@ func (k *Keyboard) Strokes(tick Ticker) <-chan int {
 				}
 				counter++
 			case <-tick.C():
-				if counter == 0 {
-					continue
-				}
 				ch <- counter
 				counter = 0
 			}

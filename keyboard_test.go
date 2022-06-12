@@ -67,6 +67,28 @@ func TestStrokes(t *testing.T) {
 		// This should not cause panic
 		_ = kb.Close()
 	})
+
+	t.Run("0 strokes sent through the channel", func(t *testing.T) {
+		kb := NewKeyboard()
+		defer func() {
+			_ = kb.Close()
+		}()
+
+		// Start stroke count
+		strokeCount := kb.Strokes(NewSpyTicker(0 * time.Millisecond))
+
+		want := 0
+		for i := 0; i < 3; i++ {
+			select {
+			case got, _ := <-strokeCount:
+				if got != want {
+					t.Fatalf("got %q, want %q", got, want)
+				}
+			case <-time.After(1*time.Millisecond):
+				t.Fatalf("expected a value in the strokeCount channel")
+			}
+		}
+	})
 }
 
 func createKeyboardWithFakeChannel(t testing.TB) (Keyboard, chan keyboard.KeyEvent, <-chan int) {
@@ -107,3 +129,7 @@ func (s *SpyTicker) C() <-chan time.Time {
 func (s *SpyTicker) Stop() {
 	s.Calls = 50 - len(s.c)
 }
+//
+//func (s *SpyTicker) Tick() {
+//	interface{}(s.c).(chan time.Time) <- time.Now()
+//}
