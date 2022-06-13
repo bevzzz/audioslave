@@ -32,7 +32,7 @@ func TestStrokes(t *testing.T) {
 	t.Run("sends intervals at a specified rate", func(t *testing.T) {
 		kb := NewKeyboard()
 		defer func() {
-			_ = kb.Close()
+			kb.Close()
 		}()
 
 		spyTicker := NewSpyTicker(5 * time.Millisecond)
@@ -65,13 +65,13 @@ func TestStrokes(t *testing.T) {
 		keyChan <- keyboard.KeyEvent{Key: keyboard.KeyCtrlC}
 
 		// This should not cause panic
-		_ = kb.Close()
+		kb.Close()
 	})
 
 	t.Run("0 strokes sent through the channel", func(t *testing.T) {
 		kb := NewKeyboard()
 		defer func() {
-			_ = kb.Close()
+			kb.Close()
 		}()
 
 		// Start stroke count

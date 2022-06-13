@@ -7,8 +7,6 @@ import (
 	itchyny "github.com/itchyny/volume-go"
 )
 
-const maxStrokesPerMinute float64 = 200
-const minVolume int = 30
 
 type VolumeController interface {
 	GetVolume() int
@@ -18,6 +16,7 @@ type VolumeController interface {
 type ItchynyVolumeController struct {}
 
 func (vc *ItchynyVolumeController) GetVolume() int {
+	// TODO: check error
 	v, _ := itchyny.GetVolume()
 	fmt.Println("Current volume is", v)
 	return v
@@ -25,7 +24,7 @@ func (vc *ItchynyVolumeController) GetVolume() int {
 
 func (vc *ItchynyVolumeController) SetVolume(v int) {
 	fmt.Println("Setting volume to", v)
-	_ = itchyny.SetVolume(v)
+	itchyny.SetVolume(v)
 }
 
 type Volume struct {
@@ -44,6 +43,9 @@ func NewVolume(window, interval time.Duration, vc VolumeController) *Volume {
 		controller: vc,
 	}
 }
+
+// TODO: the volume should increase faster then it decreases
+// TODO: volume should not increase/decrease linearly: the volume should change faster as the speed approaches `maxStrokesPerMinute`
 
 func (v *Volume) Adjust(nStrokes int) {
 	nStrokesPerMinute := float64(nStrokes) * float64(time.Minute / v.interval)

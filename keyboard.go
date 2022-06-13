@@ -30,11 +30,13 @@ func (dt *DefaultTicker) Stop() {
 }
 
 type Keyboard struct {
+	// TODO: rename to `KeystrokeCounter`
 	keystrokes <-chan keyboard.KeyEvent
 }
 
 func NewKeyboard() *Keyboard {
-	keystrokes, _ := keyboard.GetKeys(10) // TODO: say, do I need to test it?
+	// TODO: check error
+	keystrokes, _ := keyboard.GetKeys(10)
 	return &Keyboard{keystrokes}
 }
 
@@ -53,6 +55,7 @@ func (k *Keyboard) Strokes(tick Ticker) <-chan int {
 				}
 				counter++
 			case <-tick.C():
+				// TODO: empty k.keystrokes on every tick; measurements from the "last interval" are now affecting the "next" count
 				ch <- counter
 				counter = 0
 			}
@@ -61,7 +64,7 @@ func (k *Keyboard) Strokes(tick Ticker) <-chan int {
 	return ch
 }
 
-func (k *Keyboard) Close() error {
-	err := keyboard.Close()
-	return err // TODO: wrap error
+func (k *Keyboard) Close() {
+	// TODO: handle (wrap) error
+	keyboard.Close()
 }
