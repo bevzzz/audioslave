@@ -15,7 +15,7 @@ func main() {
 	const tickInterval = 2 * time.Second
 	countStrokes := kb.Strokes(NewDefaultTicker(tickInterval))
 
-	vc := &SpyVolumeController{100}
+	vc := &ItchynyVolumeController{}
 	volume := NewVolume(10*time.Second, 2*time.Second, vc)
 
 	for {
@@ -31,16 +31,3 @@ func main() {
 	}
 }
 
-
-type SpyVolumeController struct {
-	Volume int
-}
-
-func (s *SpyVolumeController) SetVolume(v int) {
-	fmt.Println("Setting volume", v)
-	s.Volume = v
-}
-
-func (s *SpyVolumeController) GetVolume() int {
-	return s.Volume
-}

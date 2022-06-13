@@ -1,15 +1,31 @@
 package main
 
 import (
+	"fmt"
 	"time"
+
+	itchyny "github.com/itchyny/volume-go"
 )
 
 const maxStrokesPerMinute float64 = 200
 const minVolume int = 30
 
 type VolumeController interface {
-	SetVolume(v int)
 	GetVolume() int
+	SetVolume(v int)
+}
+
+type ItchynyVolumeController struct {}
+
+func (vc *ItchynyVolumeController) GetVolume() int {
+	v, _ := itchyny.GetVolume()
+	fmt.Println("Current volume is", v)
+	return v
+}
+
+func (vc *ItchynyVolumeController) SetVolume(v int) {
+	fmt.Println("Setting volume to", v)
+	_ = itchyny.SetVolume(v)
 }
 
 type Volume struct {
