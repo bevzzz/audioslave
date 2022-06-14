@@ -12,7 +12,7 @@ func TestAdjust(t *testing.T) {
 		initialVolume := 87
 		volume, controller := createVolumeAndController(t, initialVolume)
 
-		volume.Adjust(50)  // would imply -50 volume
+		volume.Adjust(50)  // would imply volume 0
 
 		if controller.Volume < minVolume {
 			t.Errorf("got %d, expected minimum %d", controller.Volume, minVolume)
@@ -25,8 +25,9 @@ func TestAdjust(t *testing.T) {
 		volume, controller := createVolumeAndController(t, initialVolume)
 
 		// Typing speed in each interval
-		charactersTyped := []int{3, 5, 4, 6, 1, 1}
-		want := []int{91, 76, 64, 46, 43, 49}
+		charactersTyped := []int{11, 7, 1, 9, 7, 0}
+		// We expect the volume to decay exponentially as speed increases
+		want := []int{96, 92, 92, 83, 71, 88}
 
 		for i, typed := range charactersTyped {
 
@@ -77,7 +78,7 @@ func createVolumeAndController(t testing.TB, initialVolume int) (v *Volume, sc *
 	window := 10 * time.Second
 
 	sc = &spyVolumeController{initialVolume}
-	v = NewVolume(window, interval, sc)
+	v = NewVolume(window, interval, 200, sc)
 
 	return
 }

@@ -6,11 +6,11 @@ import (
 )
 
 const (
-	typingSpeedInterval = 2
+	typingSpeedInterval = 1
 	typingSpeedWindow = 10
-	maxStrokesPerMinute float64 = 200
-	minVolume int = 30
+	minVolume = 50
 )
+
 
 func main() {
 
@@ -21,8 +21,9 @@ func main() {
 
 	countStrokes := kb.Strokes(NewDefaultTicker(typingSpeedInterval*time.Second))
 
+	averageStrokesPerMinute := 300.0
 	vc := &ItchynyVolumeController{}
-	volume := NewVolume(typingSpeedWindow*time.Second, typingSpeedInterval*time.Second, vc)
+	volume := NewVolume(typingSpeedWindow*time.Second, typingSpeedInterval*time.Second, averageStrokesPerMinute, vc)
 
 	for {
 		n, ok := <-countStrokes
@@ -31,7 +32,7 @@ func main() {
 			volume.Reset()
 			break
 		}
-		fmt.Printf("You've pressed %d keys in the past %v\n", n, typingSpeedInterval*time.Second)
+		//fmt.Printf("You've pressed %d keys in the past %v\n", n, typingSpeedInterval*time.Second)
 
 		volume.Adjust(n)
 	}
