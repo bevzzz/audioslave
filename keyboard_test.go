@@ -7,21 +7,20 @@ import (
 	"time"
 )
 
-func TestStrokes(t *testing.T) {
+func TestCount(t *testing.T) {
 
 	t.Run("number of keystrokes is captured", func(t *testing.T) {
 		var got []int
 		want := []int{2, 5, 6}
 
-		// Create a fake channel through which keystrokes will be sent
-		_, keyChan, strokeCount := createKeyboardWithFakeChannel(t)
+		_, keyChan, strokeCount := createCounterWithFakeChannel(t)
 
 		// Simulate keystrokes being sent through the channel
 		for _, n := range want {
 			for i := 0; i < n; i++ {
 				keyChan <- keyboard.KeyEvent{}
 			}
-			// Strokes() should post count every 1s
+			// Count() should post count at an interval
 			got = append(got, <-strokeCount)
 		}
 		if !reflect.DeepEqual(got, want) {
@@ -29,14 +28,14 @@ func TestStrokes(t *testing.T) {
 		}
 	})
 
-	t.Run("sends intervals at a specified rate", func(t *testing.T) {
-		kb := NewKeyboard()
+	t.Run("uses ticket to send updates at a certain interval", func(t *testing.T) {
+		kc := NewKeystrokeCounter()
 		defer func() {
-			kb.Close()
+			kc.Stop()
 		}()
 
-		spyTicker := NewSpyTicker(5 * time.Millisecond)
-		kb.Strokes(spyTicker)
+		spyTicker := newSpyTicker(5 * time.Millisecond)
+		kc.Count(spyTicker)
 		time.Sleep(time.Millisecond)
 		spyTicker.Stop()
 
@@ -46,36 +45,35 @@ func TestStrokes(t *testing.T) {
 	})
 
 	t.Run("count channel is closed after Ctrl+C", func(t *testing.T) {
-		_, keyChan, strokeCount := createKeyboardWithFakeChannel(t)
+		_, keyChan, strokeCount := createCounterWithFakeChannel(t)
 
 		// Imitate sending 'interrupt event'
 		keyChan <- keyboard.KeyEvent{Key: keyboard.KeyCtrlC}
 
 		// Interrupt signal (-1) is sent
-		_, open := <-strokeCount
-		if open {
+		if _, open := <-strokeCount; open {
 			t.Error("the channel is open, expected closed")
 		}
 	})
 
 	t.Run("goroutine does not send on closed channel", func(t *testing.T) {
-		kb, keyChan, _ := createKeyboardWithFakeChannel(t)
+		kc, keyChan, _ := createCounterWithFakeChannel(t)
 
 		// Imitate sending 'interrupt event'
 		keyChan <- keyboard.KeyEvent{Key: keyboard.KeyCtrlC}
 
 		// This should not cause panic
-		kb.Close()
+		kc.Stop()
 	})
 
 	t.Run("0 strokes sent through the channel", func(t *testing.T) {
-		kb := NewKeyboard()
+		kc := NewKeystrokeCounter()
 		defer func() {
-			kb.Close()
+			kc.Stop()
 		}()
 
 		// Start stroke count
-		strokeCount := kb.Strokes(NewSpyTicker(0 * time.Millisecond))
+		strokeCount := kc.Count(newSpyTicker(0 * time.Millisecond))
 
 		want := 0
 		for i := 0; i < 3; i++ {
@@ -89,48 +87,58 @@ func TestStrokes(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("keystrokes channel is flushed on every tick", func(t *testing.T) {
+		// TODO: empty k.keystrokes on every tick; measurements from the "last interval" are now affecting the "next" count
+	})
 }
 
-func createKeyboardWithFakeChannel(t testing.TB) (Keyboard, chan keyboard.KeyEvent, <-chan int) {
+// createCounterWithFakeChannel returns a KeystrokeCounter,
+// its Count() channel, and another fake keystrokes channel.
+func createCounterWithFakeChannel(t testing.TB) (KeystrokeCounter, chan keyboard.KeyEvent, <-chan int) {
 	t.Helper()
 
-	// Create a fake channel through which keystrokes can be sent
+	// Create a fake channel through which custom keystrokes can be sent
 	keyChan := make(chan keyboard.KeyEvent)
-	kb := Keyboard{keystrokes: keyChan}
+	kc := KeystrokeCounter{keystrokes: keyChan}
 
 	// Start stroke count
-	strokeCount := kb.Strokes(NewDefaultTicker(0 * time.Millisecond))
+	strokeCount := kc.Count(NewDefaultTicker(0 * time.Millisecond))
 
-	return kb, keyChan, strokeCount
+	return kc, keyChan, strokeCount
 }
 
-type SpyTicker struct {
+// spyTicker implements main.Ticker interface for testing purposes.
+type spyTicker struct {
 	interval time.Duration
+	bufSize  int
 	Calls    int
 	c        <-chan time.Time
 }
 
-func NewSpyTicker(interval time.Duration) *SpyTicker {
-	c := make(chan time.Time, 50)
-	for i := 0; i < 50; i++ {
+// newSpyTicker creates a spyTicker with a pre-filled ping channel.
+func newSpyTicker(interval time.Duration) *spyTicker {
+	n := 5
+	c := make(chan time.Time, n)
+
+	// Populate channel in advance, so values can be read immediately
+	for i := 0; i < n; i++ {
 		c <- time.Time{}
 	}
 
-	return &SpyTicker{
+	return &spyTicker{
 		interval: interval,
 		c:        c,
+		bufSize:  n,
 	}
 }
 
-func (s *SpyTicker) C() <-chan time.Time {
+// C returns the ping channel.
+func (s *spyTicker) C() <-chan time.Time {
 	return s.c
 }
 
-func (s *SpyTicker) Stop() {
-	s.Calls = 50 - len(s.c)
+// Stop calculates the number of values that were read from the ping channel.
+func (s *spyTicker) Stop() {
+	s.Calls = s.bufSize - len(s.c)
 }
-
-//
-//func (s *SpyTicker) Tick() {
-//	interface{}(s.c).(chan time.Time) <- time.Now()
-//}

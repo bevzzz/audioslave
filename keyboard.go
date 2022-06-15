@@ -5,15 +5,19 @@ import (
 	"time"
 )
 
+// Ticker can be set up to ping a channel at a certain interval.
 type Ticker interface {
-	Stop()
-	C() <-chan time.Time
+	Stop()               // stops ticker
+	C() <-chan time.Time // returns the ping channel
 }
 
+// DefaultTicker implements Ticker interface.
+// Wraps around time.Ticker struct
 type DefaultTicker struct {
 	t *time.Ticker
 }
 
+// NewDefaultTicker creates an instance of time.Ticker for the specified interval.
 func NewDefaultTicker(interval time.Duration) *DefaultTicker {
 	if interval < time.Millisecond {
 		interval = time.Millisecond
@@ -29,18 +33,24 @@ func (dt *DefaultTicker) Stop() {
 	dt.t.Stop()
 }
 
-type Keyboard struct {
-	// TODO: rename to `KeystrokeCounter`
+// KeystrokeCounter calculates average typing speed.
+// Wraps around `keyboard` package.
+type KeystrokeCounter struct {
 	keystrokes <-chan keyboard.KeyEvent
 }
 
-func NewKeyboard() *Keyboard {
+// NewKeystrokeCounter creates a KeystrokeCounter and passes a channel where key-events are posted.
+func NewKeystrokeCounter() *KeystrokeCounter {
 	// TODO: check error
 	keystrokes, _ := keyboard.GetKeys(10)
-	return &Keyboard{keystrokes}
+	return &KeystrokeCounter{keystrokes}
 }
 
-func (k *Keyboard) Strokes(tick Ticker) <-chan int {
+// Count starts a goroutine that counts keystrokes in per specified interval.
+// It returns a channel where the count is posted on every "tick".
+//
+// Ctrl+C (keyboard.KeyCtrlC) stops the counter and closes the channel.
+func (k *KeystrokeCounter) Count(tick Ticker) <-chan int {
 	ch := make(chan int)
 	go func() {
 		defer tick.Stop()
@@ -55,7 +65,6 @@ func (k *Keyboard) Strokes(tick Ticker) <-chan int {
 				}
 				counter++
 			case <-tick.C():
-				// TODO: empty k.keystrokes on every tick; measurements from the "last interval" are now affecting the "next" count
 				ch <- counter
 				counter = 0
 			}
@@ -64,7 +73,8 @@ func (k *Keyboard) Strokes(tick Ticker) <-chan int {
 	return ch
 }
 
-func (k *Keyboard) Close() {
+// Stop closes the key-event channel.
+func (k *KeystrokeCounter) Stop() {
 	// TODO: handle (wrap) error
 	keyboard.Close()
 }

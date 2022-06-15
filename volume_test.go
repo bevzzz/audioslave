@@ -10,19 +10,19 @@ func TestAdjust(t *testing.T) {
 	t.Run("lower boundary is set", func(t *testing.T) {
 
 		initialVolume := 87
-		volume, controller := createVolumeAndController(t, initialVolume)
+		output, vc := createOutputAndVolumeController(t, initialVolume)
 
-		volume.Adjust(50) // would imply volume 0
+		output.Adjust(50) // would imply volume 0
 
-		if controller.Volume < minVolume {
-			t.Errorf("got %d, expected minimum %d", controller.Volume, minVolume)
+		if vc.GetVolume() < minVolume {
+			t.Errorf("got %d, expected minimum %d", vc.GetVolume(), minVolume)
 		}
 	})
 
 	t.Run("sets the volume based on the average char/min", func(t *testing.T) {
 
 		initialVolume := 100
-		volume, controller := createVolumeAndController(t, initialVolume)
+		output, vc := createOutputAndVolumeController(t, initialVolume)
 
 		// Typing speed in each interval
 		charactersTyped := []int{11, 7, 1, 9, 7, 0}
@@ -31,12 +31,12 @@ func TestAdjust(t *testing.T) {
 
 		for i, typed := range charactersTyped {
 
-			volume.Adjust(typed)
+			output.Adjust(typed)
 
-			if controller.Volume != want[i] {
+			if vc.GetVolume() != want[i] {
 				t.Fatalf(
 					"got %d, want %d, given typed %v, and initial volume %d",
-					controller.Volume, want[i], charactersTyped[:i+1], initialVolume,
+					vc.GetVolume(), want[i], charactersTyped[:i+1], initialVolume,
 				)
 			}
 		}
@@ -45,40 +45,42 @@ func TestAdjust(t *testing.T) {
 
 func TestReset(t *testing.T) {
 	initialVolume := 70
-	volume, controller := createVolumeAndController(t, initialVolume)
+	output, vc := createOutputAndVolumeController(t, initialVolume)
 
 	// Typing speed in each interval
 	for _, typed := range []int{3, 3, 6} {
-		volume.Adjust(typed)
+		output.Adjust(typed)
 	}
 
-	volume.Reset()
+	output.Reset()
 
-	if controller.Volume != initialVolume {
-		t.Errorf("got %d, want %d", controller.Volume, initialVolume)
+	if vc.GetVolume() != initialVolume {
+		t.Errorf("got %d, want %d", vc.GetVolume(), initialVolume)
 	}
 }
 
+// spyVolumeController implements main.VolumeController interface for testing purposes.
 type spyVolumeController struct {
-	Volume int
+	volume int
 }
 
 func (s *spyVolumeController) SetVolume(v int) {
-	s.Volume = v
+	s.volume = v
 }
 
 func (s *spyVolumeController) GetVolume() int {
-	return s.Volume
+	return s.volume
 }
 
-func createVolumeAndController(t testing.TB, initialVolume int) (v *Volume, sc *spyVolumeController) {
+// createOutputAndVolumeController creates spyVolumeController and Output objects with pre-set parameters.
+func createOutputAndVolumeController(t testing.TB, initialVolume int) (v *Output, sc *spyVolumeController) {
 	t.Helper()
 
 	interval := 2 * time.Second
 	window := 10 * time.Second
 
 	sc = &spyVolumeController{initialVolume}
-	v = NewVolume(window, interval, 200, sc)
+	v = NewOutput(window, interval, 200, sc)
 
 	return
 }

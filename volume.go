@@ -7,24 +7,31 @@ import (
 	itchyny "github.com/itchyny/volume-go"
 )
 
+// VolumeController can read and modify the output volume.
 type VolumeController interface {
 	GetVolume() int
 	SetVolume(v int)
 }
 
+// ItchynyVolumeController implements VolumeController.
+// Wraps around `itchyny` package for manipulating volume on the computer.
 type ItchynyVolumeController struct{}
 
+// GetVolume reads the current volume.
 func (vc *ItchynyVolumeController) GetVolume() int {
 	// TODO: check error
 	v, _ := itchyny.GetVolume()
 	return v
 }
 
+// SetVolume sets the volume.
 func (vc *ItchynyVolumeController) SetVolume(v int) {
 	itchyny.SetVolume(v)
 }
 
-type Volume struct {
+// Output holds the information necessary for adjusting
+// the output levels based on the user's typing speed.
+type Output struct {
 	strokes       []float64
 	interval      time.Duration
 	initialVolume int
@@ -32,10 +39,12 @@ type Volume struct {
 	reduceBy      func(float64) float64
 }
 
-func NewVolume(window, interval time.Duration, averageCPM float64, vc VolumeController) *Volume {
+// NewOutput creates an Output object with the appropriate strokes buffer
+// and a function for calculating the level of output reduction.
+func NewOutput(window, interval time.Duration, averageCPM float64, vc VolumeController) *Output {
 	strokes := make([]float64, window/interval)
 	r := getExponentialDecayFunc(averageCPM)
-	return &Volume{
+	return &Output{
 		strokes:       strokes,
 		interval:      interval,
 		initialVolume: vc.GetVolume(),
@@ -44,25 +53,28 @@ func NewVolume(window, interval time.Duration, averageCPM float64, vc VolumeCont
 	}
 }
 
-func (v *Volume) Adjust(nStrokes int) {
-	nStrokesPerMinute := float64(nStrokes) * float64(time.Minute/v.interval)
-	v.strokes = append(v.strokes[1:], nStrokesPerMinute) // push new value
+// Adjust recalculates the average typing speed and adjusts the output accordingly.
+func (o *Output) Adjust(nStrokes int) {
+	nStrokesPerMinute := float64(nStrokes) * float64(time.Minute/o.interval)
+	o.strokes = append(o.strokes[1:], nStrokesPerMinute) // push new value
 
-	averageStrokes := mean(v.strokes...)
-	reduceVolumeBy := v.reduceBy(averageStrokes) / 100
-	newVolume := int(float64(v.initialVolume) * (1 - reduceVolumeBy))
+	averageStrokes := mean(o.strokes...)
+	reduceVolumeBy := o.reduceBy(averageStrokes) / 100
+	newVolume := int(float64(o.initialVolume) * (1 - reduceVolumeBy))
 
 	if newVolume < minVolume {
 		newVolume = minVolume
 	}
 
-	v.controller.SetVolume(newVolume)
+	o.controller.SetVolume(newVolume)
 }
 
-func (v *Volume) Reset() {
-	v.controller.SetVolume(v.initialVolume)
+// Reset restores the original output level.
+func (o *Output) Reset() {
+	o.controller.SetVolume(o.initialVolume)
 }
 
+// mean calculates the average value of its arguments
 func mean(numbers ...float64) float64 {
 	var total float64
 	for _, n := range numbers {
@@ -71,6 +83,9 @@ func mean(numbers ...float64) float64 {
 	return total / float64(len(numbers))
 }
 
+// getExponentialDecayFunc derives a formula for the exponential equation from
+// 2 points at which we want the output level to drop by 10% and 100% respectively.
+// It then creates a function that can estimate the result for any x.
 func getExponentialDecayFunc(averageCPM float64) func(float64) float64 {
 	type point struct {
 		x float64
@@ -84,10 +99,10 @@ func getExponentialDecayFunc(averageCPM float64) func(float64) float64 {
 	b := math.Pow(p2.y/p1.y, 1/(p2.x-p1.x))
 	a := p1.y * math.Pow(b, -p1.x)
 
-	return func(i float64) float64 {
-		if i == 0 {
+	return func(x float64) float64 {
+		if x == 0 {
 			return 0
 		}
-		return a * math.Pow(b, i)
+		return a * math.Pow(b, x)
 	}
 }

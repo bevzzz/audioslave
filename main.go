@@ -6,33 +6,34 @@ import (
 )
 
 const (
-	typingSpeedInterval = 1
-	typingSpeedWindow   = 10
+	typingSpeedInterval = 1  // average typing speed will be recalculated every N seconds
+	typingSpeedWindow   = 10 // calculate average over the past M seconds
 	minVolume           = 50
 )
 
 func main() {
 
-	kb := NewKeyboard()
+	kc := NewKeystrokeCounter()
 	defer func() {
-		kb.Close()
+		kc.Stop()
 	}()
 
-	countStrokes := kb.Strokes(NewDefaultTicker(typingSpeedInterval * time.Second))
+	countStrokes := kc.Count(NewDefaultTicker(typingSpeedInterval * time.Second))
 
+	// TODO: make averageStrokesPerMinute a command-line option
 	averageStrokesPerMinute := 300.0
 	vc := &ItchynyVolumeController{}
-	volume := NewVolume(typingSpeedWindow*time.Second, typingSpeedInterval*time.Second, averageStrokesPerMinute, vc)
+
+	// TODO: consider hiding "time.Seconds" behind Output
+	output := NewOutput(typingSpeedWindow*time.Second, typingSpeedInterval*time.Second, averageStrokesPerMinute, vc)
 
 	for {
 		n, ok := <-countStrokes
 		if !ok {
 			fmt.Println("Got interrupted")
-			volume.Reset()
+			output.Reset()
 			break
 		}
-		//fmt.Printf("You've pressed %d keys in the past %v\n", n, typingSpeedInterval*time.Second)
-
-		volume.Adjust(n)
+		output.Adjust(n)
 	}
 }
