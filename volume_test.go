@@ -12,7 +12,7 @@ func TestAdjust(t *testing.T) {
 		initialVolume := 87
 		volume, controller := createVolumeAndController(t, initialVolume)
 
-		volume.Adjust(50)  // would imply volume 0
+		volume.Adjust(50) // would imply volume 0
 
 		if controller.Volume < minVolume {
 			t.Errorf("got %d, expected minimum %d", controller.Volume, minVolume)

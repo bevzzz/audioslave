@@ -84,7 +84,7 @@ func TestStrokes(t *testing.T) {
 				if got != want {
 					t.Fatalf("got %q, want %q", got, want)
 				}
-			case <-time.After(1*time.Millisecond):
+			case <-time.After(1 * time.Millisecond):
 				t.Fatalf("expected a value in the strokeCount channel")
 			}
 		}
@@ -129,6 +129,7 @@ func (s *SpyTicker) C() <-chan time.Time {
 func (s *SpyTicker) Stop() {
 	s.Calls = 50 - len(s.c)
 }
+
 //
 //func (s *SpyTicker) Tick() {
 //	interface{}(s.c).(chan time.Time) <- time.Now()
