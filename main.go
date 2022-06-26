@@ -12,13 +12,16 @@ func main() {
 		kc.Stop()
 	}()
 
-	conf := parseFlags(os.Args[0], os.Args[1:])
+	conf, parseMessage, err := parseFlags(os.Args[0], os.Args[1:])
+	if wantsHelp(err) {
+		fmt.Println(parseMessage)
+		os.Exit(2)
+	}
 
 	countStrokes := kc.Count(NewDefaultTicker(conf.Interval))
 
 	vc := &ItchynyVolumeController{}
 
-	// TODO: consider hiding "time.Seconds" behind Output
 	output := NewOutput(conf.Window, conf.Interval, conf.AverageCpm, vc, conf.MinVolume)
 
 	for {
