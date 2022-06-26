@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const testMinVolume = 30
+
 func TestAdjust(t *testing.T) {
 
 	t.Run("lower boundary is set", func(t *testing.T) {
@@ -14,8 +16,8 @@ func TestAdjust(t *testing.T) {
 
 		output.Adjust(50) // would imply volume 0
 
-		if vc.GetVolume() < minVolume {
-			t.Errorf("got %d, expected minimum %d", vc.GetVolume(), minVolume)
+		if vc.GetVolume() != testMinVolume {
+			t.Errorf("got %d, expected minimum %d", vc.GetVolume(), testMinVolume)
 		}
 	})
 
@@ -78,9 +80,10 @@ func createOutputAndVolumeController(t testing.TB, initialVolume int) (v *Output
 
 	interval := 2 * time.Second
 	window := 10 * time.Second
+	averageTypingSpeed := 200
 
 	sc = &spyVolumeController{initialVolume}
-	v = NewOutput(window, interval, 200, sc)
+	v = NewOutput(window, interval, averageTypingSpeed, sc, testMinVolume)
 
 	return
 }

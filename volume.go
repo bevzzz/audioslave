@@ -37,19 +37,21 @@ type Output struct {
 	initialVolume int
 	controller    VolumeController
 	reduceBy      func(float64) float64
+	minVolume     int
 }
 
 // NewOutput creates an Output object with the appropriate strokes buffer
 // and a function for calculating the level of output reduction.
-func NewOutput(window, interval time.Duration, averageCPM float64, vc VolumeController) *Output {
+func NewOutput(window, interval time.Duration, averageCPM int, vc VolumeController, minVol int) *Output {
 	strokes := make([]float64, window/interval)
-	r := getExponentialDecayFunc(averageCPM)
+	r := getExponentialDecayFunc(float64(averageCPM))
 	return &Output{
 		strokes:       strokes,
 		interval:      interval,
 		initialVolume: vc.GetVolume(),
 		controller:    vc,
 		reduceBy:      r,
+		minVolume:     minVol,
 	}
 }
 
@@ -62,8 +64,8 @@ func (o *Output) Adjust(nStrokes int) {
 	reduceVolumeBy := o.reduceBy(averageStrokes) / 100
 	newVolume := int(float64(o.initialVolume) * (1 - reduceVolumeBy))
 
-	if newVolume < minVolume {
-		newVolume = minVolume
+	if newVolume < o.minVolume {
+		newVolume = o.minVolume
 	}
 
 	o.controller.SetVolume(newVolume)

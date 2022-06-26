@@ -2,13 +2,7 @@ package main
 
 import (
 	"fmt"
-	"time"
-)
-
-const (
-	typingSpeedInterval = 1  // average typing speed will be recalculated every N seconds
-	typingSpeedWindow   = 10 // calculate average over the past M seconds
-	minVolume           = 50
+	"os"
 )
 
 func main() {
@@ -18,14 +12,14 @@ func main() {
 		kc.Stop()
 	}()
 
-	countStrokes := kc.Count(NewDefaultTicker(typingSpeedInterval * time.Second))
+	conf := parseFlags(os.Args[0], os.Args[1:])
 
-	// TODO: make averageStrokesPerMinute a command-line option
-	averageStrokesPerMinute := 300.0
+	countStrokes := kc.Count(NewDefaultTicker(conf.Interval))
+
 	vc := &ItchynyVolumeController{}
 
 	// TODO: consider hiding "time.Seconds" behind Output
-	output := NewOutput(typingSpeedWindow*time.Second, typingSpeedInterval*time.Second, averageStrokesPerMinute, vc)
+	output := NewOutput(conf.Window, conf.Interval, conf.AverageCpm, vc, conf.MinVolume)
 
 	for {
 		n, ok := <-countStrokes
@@ -37,3 +31,7 @@ func main() {
 		output.Adjust(n)
 	}
 }
+
+// TODO: add command line arguments
+// TODO: write README.md and synopsis
+// TODO: add test coverage to github actions
