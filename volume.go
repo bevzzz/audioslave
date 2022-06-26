@@ -29,6 +29,8 @@ func (vc *ItchynyVolumeController) SetVolume(v int) {
 	itchyny.SetVolume(v)
 }
 
+type reductionFunc func(float64) float64
+
 // Output holds the information necessary for adjusting
 // the output levels based on the user's typing speed.
 type Output struct {
@@ -36,22 +38,22 @@ type Output struct {
 	interval      time.Duration
 	initialVolume int
 	controller    VolumeController
-	reduceBy      func(float64) float64
+	reduceBy      reductionFunc
 	minVolume     int
 }
 
 // NewOutput creates an Output object with the appropriate strokes buffer
 // and a function for calculating the level of output reduction.
-func NewOutput(window, interval time.Duration, averageCPM int, vc VolumeController, minVol int) *Output {
+func NewOutput(window, interval time.Duration, averageCpm int, vc VolumeController, minVolume int) *Output {
 	strokes := make([]float64, window/interval)
-	r := getExponentialDecayFunc(float64(averageCPM))
+	r := getExponentialDecayFunc(float64(averageCpm))
 	return &Output{
 		strokes:       strokes,
 		interval:      interval,
 		initialVolume: vc.GetVolume(),
 		controller:    vc,
 		reduceBy:      r,
-		minVolume:     minVol,
+		minVolume:     minVolume,
 	}
 }
 
@@ -88,14 +90,14 @@ func mean(numbers ...float64) float64 {
 // getExponentialDecayFunc derives a formula for the exponential equation from
 // 2 points at which we want the output level to drop by 10% and 100% respectively.
 // It then creates a function that can estimate the result for any x.
-func getExponentialDecayFunc(averageCPM float64) func(float64) float64 {
+func getExponentialDecayFunc(averageCpm float64) reductionFunc {
 	type point struct {
 		x float64
 		y float64
 	}
 
-	p1 := point{x: averageCPM / 1.5, y: 10}  // point at which volume should be reduced by 10%
-	p2 := point{x: averageCPM * 1.5, y: 100} // point at which volume should be reduced by 100%
+	p1 := point{x: averageCpm / 1.5, y: 10}  // point at which volume should be reduced by 10%
+	p2 := point{x: averageCpm * 1.5, y: 100} // point at which volume should be reduced by 100%
 
 	// Solve f(x) = ab^x for a and b
 	b := math.Pow(p2.y/p1.y, 1/(p2.x-p1.x))
