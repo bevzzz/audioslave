@@ -23,7 +23,10 @@ A number of options can be specified to customize your experience :
 - **Average CPM** (characters-per-minute): make sure the volume changes relative to your typing speed
 - **Window** and **interval**: current typing speed is calculated as an average of the last N observation. How many observations should be taken into account and how often should the typing speed be measured?    
 
-Explore the available options with `audioslave --help`!
+Explore the available options with:
+```bash
+audioslave --help
+```
 
 ## Contributing  
 Contributions are welcome!  
