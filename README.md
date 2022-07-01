@@ -28,7 +28,7 @@ Explore the available options with:
 ./audioslave --help
 ```
 
-## Contributing  
+## Contribute  
 Contributions are welcome!  
 If you found a bug or an improvement, feel free to open an issue.  
 For submitting PRs, please follow the [open source contribution guide](https://opensource.guide/how-to-contribute/#opening-a-pull-request]).
