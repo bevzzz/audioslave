@@ -7,7 +7,7 @@
 Listening to music while working is func. Sometimes, however, while writing code, emails, a message to your colleague, or a piece of documentation, you might wish that it was just a bit quiter.  
 Here's where `audioslave` comes into play: it's a command line utility that _controls the output volume_ on your device based on your current typing speed.
 
-## Installation
+## Install
 ```bash
 go install github.com/bevzzz/audioslave@latest
 ```  
