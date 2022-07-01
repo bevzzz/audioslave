@@ -21,7 +21,9 @@ Compiled binary for those who want to use it without installing the `go tool` is
 A number of options can be specified to customize your experience :
 - **Min volume**: set the volume that should be set at "peak activity"
 - **Average CPM** (characters-per-minute): make sure the volume changes relative to your typing speed
-- **Window** and **interval**: current typing speed is calculated as an average of the last N observation. How many observations should be taken into account and how often should the typing speed be measured?  
+- **Window** and **interval**: current typing speed is calculated as an average of the last N observation. How many observations should be taken into account and how often should the typing speed be measured?    
+
+Explore the available options with `audioslave --help`!
 
 ## Contributing  
 Contributions are welcome!  
