@@ -25,7 +25,7 @@ A number of options can be specified to customize your experience :
 
 Explore the available options with:
 ```bash
-audioslave --help
+./audioslave --help
 ```
 
 ## Contributing  
