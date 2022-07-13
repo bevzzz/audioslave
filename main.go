@@ -2,21 +2,15 @@ package main
 
 import (
 	"fmt"
-	"os"
 )
 
 func main() {
+	conf := parseCommand()
 
 	kc := NewKeystrokeCounter()
 	defer func() {
 		kc.Stop()
 	}()
-
-	conf, parseMessage, err := parseFlags(os.Args[0], os.Args[1:])
-	if wantsHelp(err) {
-		fmt.Println(parseMessage)
-		os.Exit(2)
-	}
 
 	countStrokes := kc.Count(NewDefaultTicker(conf.Interval))
 

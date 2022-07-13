@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -34,20 +35,15 @@ func TestParseFlags(t *testing.T) {
 			}},
 	} {
 		t.Run(strings.Join(tt.Args, " "), func(t *testing.T) {
-			conf, _, _ := parseFlags("test", tt.Args)
+			flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+			os.Args = []string{"cmd"}
+			for _, arg := range tt.Args {
+				os.Args = append(os.Args, arg)
+			}
+			conf := parseCommand()
 			if !reflect.DeepEqual(conf, tt.ExpectedConf) {
 				t.Errorf("got %+v, want %+v", conf, tt.ExpectedConf)
 			}
 		})
 	}
-
-	t.Run("--help flag returns default dump", func(t *testing.T) {
-		_, output, err := parseFlags("helpMe", []string{"--help"})
-		if output == "" {
-			t.Errorf("expected default help text, but didn't get one")
-		}
-		if err == nil || !wantsHelp(err) {
-			t.Errorf("must return %q if --help flag is not defined", flag.ErrHelp)
-		}
-	})
 }
