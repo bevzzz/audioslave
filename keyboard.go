@@ -33,24 +33,28 @@ func (dt *DefaultTicker) Stop() {
 	dt.t.Stop()
 }
 
-// KeystrokeCounter calculates average typing speed.
+type KeystrokeCounter interface {
+	Count(ticker Ticker) <-chan int
+	Stop()
+}
+
+// DefaultKeystrokeCounter calculates average typing speed.
 // Wraps around `keyboard` package.
-type KeystrokeCounter struct {
+type DefaultKeystrokeCounter struct {
 	keystrokes <-chan keyboard.KeyEvent
 }
 
-// NewKeystrokeCounter creates a KeystrokeCounter and passes a channel where key-events are posted.
-func NewKeystrokeCounter() *KeystrokeCounter {
-	// TODO: check error
-	keystrokes, _ := keyboard.GetKeys(10)
-	return &KeystrokeCounter{keystrokes}
+// NewKeystrokeCounter creates a DefaultKeystrokeCounter and passes a channel where key-events are posted.
+func NewKeystrokeCounter() (*DefaultKeystrokeCounter, error) {
+	keystrokes, err := keyboard.GetKeys(10)
+	return &DefaultKeystrokeCounter{keystrokes}, err
 }
 
 // Count starts a goroutine that counts keystrokes in per specified interval.
 // It returns a channel where the count is posted on every "tick".
 //
 // Ctrl+C (keyboard.KeyCtrlC) stops the counter and closes the channel.
-func (k *KeystrokeCounter) Count(tick Ticker) <-chan int {
+func (k *DefaultKeystrokeCounter) Count(tick Ticker) <-chan int {
 	ch := make(chan int)
 	go func() {
 		defer tick.Stop()
@@ -58,15 +62,15 @@ func (k *KeystrokeCounter) Count(tick Ticker) <-chan int {
 		var counter int
 		for {
 			select {
+			case <-tick.C():
+				ch <- counter
+				counter = 0
 			case ks, _ := <-k.keystrokes:
 				if ks.Key == keyboard.KeyCtrlC {
 					close(ch)
 					return
 				}
 				counter++
-			case <-tick.C():
-				ch <- counter
-				counter = 0
 			}
 		}
 	}()
@@ -74,7 +78,6 @@ func (k *KeystrokeCounter) Count(tick Ticker) <-chan int {
 }
 
 // Stop closes the key-event channel.
-func (k *KeystrokeCounter) Stop() {
-	// TODO: handle (wrap) error
-	keyboard.Close()
+func (k *DefaultKeystrokeCounter) Stop() error {
+	return keyboard.Close()
 }

@@ -2,12 +2,16 @@ package main
 
 import (
 	"fmt"
+	"log"
 )
 
 func main() {
 	conf := parseCommand()
 
-	kc := NewKeystrokeCounter()
+	kc, err := NewKeystrokeCounter()
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer func() {
 		kc.Stop()
 	}()
