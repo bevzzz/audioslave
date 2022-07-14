@@ -1,7 +1,8 @@
 package main
 
 import (
-	"github.com/eiannone/keyboard"
+	"context"
+	"runtime"
 	"time"
 )
 
@@ -41,13 +42,22 @@ type KeystrokeCounter interface {
 // DefaultKeystrokeCounter calculates average typing speed.
 // Wraps around `keyboard` package.
 type DefaultKeystrokeCounter struct {
-	keystrokes <-chan keyboard.KeyEvent
+	Keylogger KeyLogger
+	Cancel    context.CancelFunc
 }
 
 // NewKeystrokeCounter creates a DefaultKeystrokeCounter and passes a channel where key-events are posted.
-func NewKeystrokeCounter() (*DefaultKeystrokeCounter, error) {
-	keystrokes, err := keyboard.GetKeys(10)
-	return &DefaultKeystrokeCounter{keystrokes}, err
+func NewKeystrokeCounter() *DefaultKeystrokeCounter {
+	switch runtime.GOOS {
+	case "windows":
+		return &DefaultKeystrokeCounter{Keylogger: NewKeyloggerWindows(), Cancel: nil}
+	case "darwin":
+		return nil
+	case "linux":
+		return nil
+	default:
+		return nil
+	}
 }
 
 // Count starts a goroutine that counts keystrokes in per specified interval.
@@ -56,28 +66,32 @@ func NewKeystrokeCounter() (*DefaultKeystrokeCounter, error) {
 // Ctrl+C (keyboard.KeyCtrlC) stops the counter and closes the channel.
 func (k *DefaultKeystrokeCounter) Count(tick Ticker) <-chan int {
 	ch := make(chan int)
+	ctx, cancel := context.WithCancel(context.Background())
+	k.Cancel = cancel
 	go func() {
 		defer tick.Stop()
-
-		var counter int
+		counter := 0
 		for {
+			ks := k.Keylogger.GetKey()
+			if !ks.Empty {
+				counter++
+			}
 			select {
 			case <-tick.C():
 				ch <- counter
 				counter = 0
-			case ks, _ := <-k.keystrokes:
-				if ks.Key == keyboard.KeyCtrlC {
-					close(ch)
-					return
-				}
-				counter++
+			case <-ctx.Done():
+				return
+			default:
 			}
 		}
 	}()
 	return ch
 }
 
-// Stop closes the key-event channel.
-func (k *DefaultKeystrokeCounter) Stop() error {
-	return keyboard.Close()
+func (k *DefaultKeystrokeCounter) Stop() {
+	if k != nil {
+		return
+	}
+	k.Cancel()
 }

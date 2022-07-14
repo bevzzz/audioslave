@@ -2,21 +2,25 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
 	conf := parseCommand()
-
-	kc, err := NewKeystrokeCounter()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer func() {
-		kc.Stop()
-	}()
+	kc := NewKeystrokeCounter()
 
 	countStrokes := kc.Count(NewDefaultTicker(conf.Interval))
+	defer kc.Stop()
+
+	go func() {
+		c := make(chan os.Signal)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		<-c
+		fmt.Println("KILLING")
+		os.Exit(1)
+	}()
 
 	vc := &ItchynyVolumeController{}
 
@@ -31,6 +35,7 @@ func main() {
 		}
 		output.Adjust(n)
 	}
+
 }
 
 // TODO: add command line arguments
