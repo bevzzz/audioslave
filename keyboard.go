@@ -50,11 +50,11 @@ type DefaultKeystrokeCounter struct {
 func NewKeystrokeCounter() *DefaultKeystrokeCounter {
 	switch runtime.GOOS {
 	case "windows":
-		return &DefaultKeystrokeCounter{Keylogger: NewKeyloggerWindows(), Cancel: nil}
+		return &DefaultKeystrokeCounter{Keylogger: NewKeyLogger(), Cancel: nil}
 	case "darwin":
 		return nil
 	case "linux":
-		return nil
+		return &DefaultKeystrokeCounter{Keylogger: NewKeyLogger(), Cancel: nil}
 	default:
 		return nil
 	}

