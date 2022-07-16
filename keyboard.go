@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"runtime"
 	"time"
 )
 
@@ -48,16 +47,7 @@ type DefaultKeystrokeCounter struct {
 
 // NewKeystrokeCounter creates a DefaultKeystrokeCounter and passes a channel where key-events are posted.
 func NewKeystrokeCounter() *DefaultKeystrokeCounter {
-	switch runtime.GOOS {
-	case "windows":
-		return &DefaultKeystrokeCounter{Keylogger: NewKeyLogger(), Cancel: nil}
-	case "darwin":
-		return nil
-	case "linux":
-		return &DefaultKeystrokeCounter{Keylogger: NewKeyLogger(), Cancel: nil}
-	default:
-		return nil
-	}
+	return &DefaultKeystrokeCounter{Keylogger: NewKeyLogger(), Cancel: nil}
 }
 
 // Count starts a goroutine that counts keystrokes in per specified interval.
