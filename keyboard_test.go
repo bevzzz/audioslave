@@ -1,11 +1,30 @@
 package main
 
 import (
-	"github.com/eiannone/keyboard"
 	"reflect"
 	"testing"
 	"time"
 )
+
+type KeyLoggerMock struct {
+	Amount int
+}
+
+func (k *KeyLoggerMock) GetKey() Key {
+	k.Amount--
+	if k.Amount < 0 {
+		return Key{
+			Empty:   true,
+			Rune:    ' ',
+			Keycode: 0,
+		}
+	}
+	return Key{
+		Empty:   false,
+		Rune:    ' ',
+		Keycode: 00,
+	}
+}
 
 func TestCount(t *testing.T) {
 
@@ -13,26 +32,26 @@ func TestCount(t *testing.T) {
 		var got []int
 		want := []int{2, 5, 6}
 
-		_, keyChan, strokeCount := createCounterWithFakeChannel(t)
-
 		// Simulate keystrokes being sent through the channel
 		for _, n := range want {
-			for i := 0; i < n; i++ {
-				keyChan <- keyboard.KeyEvent{}
+			kl := &KeyLoggerMock{Amount: n}
+			counter := DefaultKeystrokeCounter{
+				Keylogger: kl,
+				Cancel:    nil,
 			}
-			// Count() should post count at an interval
-			got = append(got, <-strokeCount)
+			ch := counter.Count(NewDefaultTicker(0))
+			got = append(got, <-ch)
 		}
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("got %v, want %v", got, want)
 		}
 	})
 
-	t.Run("uses ticket to send updates at a certain interval", func(t *testing.T) {
-		kc := NewKeystrokeCounter()
-		defer func() {
-			kc.Stop()
-		}()
+	t.Run("uses ticker to send updates at a certain interval", func(t *testing.T) {
+		kc := DefaultKeystrokeCounter{
+			Keylogger: &KeyLoggerMock{},
+			Cancel:    nil,
+		}
 
 		spyTicker := newSpyTicker(5 * time.Millisecond)
 		kc.Count(spyTicker)
@@ -44,68 +63,28 @@ func TestCount(t *testing.T) {
 		}
 	})
 
-	t.Run("count channel is closed after Ctrl+C", func(t *testing.T) {
-		_, keyChan, strokeCount := createCounterWithFakeChannel(t)
-
-		// Imitate sending 'interrupt event'
-		keyChan <- keyboard.KeyEvent{Key: keyboard.KeyCtrlC}
-
-		// Interrupt signal (-1) is sent
-		if _, open := <-strokeCount; open {
-			t.Error("the channel is open, expected closed")
-		}
-	})
-
 	t.Run("goroutine does not send on closed channel", func(t *testing.T) {
-		kc, keyChan, _ := createCounterWithFakeChannel(t)
-
-		// Imitate sending 'interrupt event'
-		keyChan <- keyboard.KeyEvent{Key: keyboard.KeyCtrlC}
-
-		// This should not cause panic
-		kc.Stop()
-	})
-
-	t.Run("0 strokes sent through the channel", func(t *testing.T) {
-		kc := NewKeystrokeCounter()
-		defer func() {
-			kc.Stop()
-		}()
-
-		// Start stroke count
-		strokeCount := kc.Count(newSpyTicker(0 * time.Millisecond))
-
-		want := 0
-		for i := 0; i < 3; i++ {
-			select {
-			case got, _ := <-strokeCount:
-				if got != want {
-					t.Fatalf("got %q, want %q", got, want)
-				}
-			case <-time.After(1 * time.Millisecond):
-				t.Fatalf("expected a value in the strokeCount channel")
-			}
+		want := 1
+		kl := &KeyLoggerMock{Amount: want}
+		counter := DefaultKeystrokeCounter{
+			Keylogger: kl,
+			Cancel:    nil,
+		}
+		ch := counter.Count(NewDefaultTicker(0))
+		n := <-ch
+		if n != want {
+			t.Errorf("got %d, want %d", n, want)
+		}
+		counter.Stop()
+		n = <-ch
+		if n != 0 {
+			t.Errorf("got %d, want %d", n, 0)
 		}
 	})
 
 	t.Run("keystrokes channel is flushed on every tick", func(t *testing.T) {
 		// TODO: empty k.keystrokes on every tick; measurements from the "last interval" are now affecting the "next" count
 	})
-}
-
-// createCounterWithFakeChannel returns a KeystrokeCounter,
-// its Count() channel, and another fake keystrokes channel.
-func createCounterWithFakeChannel(t testing.TB) (KeystrokeCounter, chan keyboard.KeyEvent, <-chan int) {
-	t.Helper()
-
-	// Create a fake channel through which custom keystrokes can be sent
-	keyChan := make(chan keyboard.KeyEvent)
-	kc := KeystrokeCounter{keystrokes: keyChan}
-
-	// Start stroke count
-	strokeCount := kc.Count(NewDefaultTicker(0 * time.Millisecond))
-
-	return kc, keyChan, strokeCount
 }
 
 // spyTicker implements main.Ticker interface for testing purposes.

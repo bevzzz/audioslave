@@ -14,10 +14,13 @@ type Config struct {
 // parseCommand - parses the command from the cli
 func parseCommand() *Config {
 	config := &Config{
+		// TODO: add MaxVolume
+		// TODO: Algorithm method to use, linear, exponential, logorithm
 		MinVolume:  40,
-		AverageCpm: 200,
-		Interval:   time.Second,
-		Window:     10 * time.Second,
+		AverageCpm: 200, // TODO: define automatically
+		// TODO: Give the user 5 options on detail grade for the speed of changing
+		Interval: time.Second,
+		Window:   10 * time.Second,
 	}
 
 	minVolume := flag.Int("min-volume", config.MinVolume, "set the minimum volume")

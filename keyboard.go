@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/eiannone/keyboard"
+	"context"
 	"time"
 )
 
@@ -33,48 +33,54 @@ func (dt *DefaultTicker) Stop() {
 	dt.t.Stop()
 }
 
-// KeystrokeCounter calculates average typing speed.
-// Wraps around `keyboard` package.
-type KeystrokeCounter struct {
-	keystrokes <-chan keyboard.KeyEvent
+type KeystrokeCounter interface {
+	Count(ticker Ticker) <-chan int
+	Stop()
 }
 
-// NewKeystrokeCounter creates a KeystrokeCounter and passes a channel where key-events are posted.
-func NewKeystrokeCounter() *KeystrokeCounter {
-	// TODO: check error
-	keystrokes, _ := keyboard.GetKeys(10)
-	return &KeystrokeCounter{keystrokes}
+// DefaultKeystrokeCounter calculates average typing speed.
+// Wraps around `keyboard` package.
+type DefaultKeystrokeCounter struct {
+	Keylogger KeyLogger
+	Cancel    context.CancelFunc
+}
+
+// NewKeystrokeCounter creates a DefaultKeystrokeCounter and passes a channel where key-events are posted.
+func NewKeystrokeCounter() *DefaultKeystrokeCounter {
+	return &DefaultKeystrokeCounter{Keylogger: NewKeyLogger(), Cancel: nil}
 }
 
 // Count starts a goroutine that counts keystrokes in per specified interval.
 // It returns a channel where the count is posted on every "tick".
 //
 // Ctrl+C (keyboard.KeyCtrlC) stops the counter and closes the channel.
-func (k *KeystrokeCounter) Count(tick Ticker) <-chan int {
+func (k *DefaultKeystrokeCounter) Count(tick Ticker) <-chan int {
 	ch := make(chan int)
+	ctx, cancel := context.WithCancel(context.Background())
+	k.Cancel = cancel
 	go func() {
 		defer tick.Stop()
-
-		var counter int
+		counter := 0
 		for {
-			select {
-			case ks, _ := <-k.keystrokes:
-				if ks.Key == keyboard.KeyCtrlC {
-					close(ch)
-					return
-				}
+			ks := k.Keylogger.GetKey()
+			if !ks.Empty {
 				counter++
+			}
+			select {
 			case <-tick.C():
 				ch <- counter
 				counter = 0
+			case <-ctx.Done():
+				return
+			default:
 			}
 		}
 	}()
 	return ch
 }
 
-// Stop closes the key-event channel.
-func (k *KeystrokeCounter) Stop() {
-	// TODO: handle (wrap) error
-	keyboard.Close()
+func (k *DefaultKeystrokeCounter) Stop() {
+	if k.Cancel != nil {
+		k.Cancel()
+	}
 }
