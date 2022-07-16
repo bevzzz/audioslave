@@ -80,8 +80,7 @@ func (k *DefaultKeystrokeCounter) Count(tick Ticker) <-chan int {
 }
 
 func (k *DefaultKeystrokeCounter) Stop() {
-	if k != nil {
-		return
+	if k.Cancel != nil {
+		k.Cancel()
 	}
-	k.Cancel()
 }
