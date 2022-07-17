@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/bevzzz/audioslave/config"
 	"github.com/bevzzz/audioslave/keyboard"
 	"github.com/bevzzz/audioslave/volume"
 	"os"
@@ -10,7 +11,7 @@ import (
 )
 
 func main() {
-	conf := parseCommand()
+	conf := config.ParseCommand()
 	kc := keyboard.NewKeystrokeCounter()
 
 	countStrokes := kc.Count(keyboard.NewDefaultTicker(conf.Interval))

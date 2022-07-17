@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"flag"
@@ -40,7 +40,7 @@ func TestParseFlags(t *testing.T) {
 			for _, arg := range tt.Args {
 				os.Args = append(os.Args, arg)
 			}
-			conf := parseCommand()
+			conf := ParseCommand()
 			if !reflect.DeepEqual(conf, tt.ExpectedConf) {
 				t.Errorf("got %+v, want %+v", conf, tt.ExpectedConf)
 			}

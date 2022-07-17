@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"flag"
@@ -11,8 +11,8 @@ type Config struct {
 	Interval, Window time.Duration
 }
 
-// parseCommand - parses the command from the cli
-func parseCommand() *Config {
+// ParseCommand - parses the command from the cli
+func ParseCommand() *Config {
 	config := &Config{
 		// TODO: add MaxVolume
 		// TODO: Algorithm method to use, linear, exponential, logorithm
