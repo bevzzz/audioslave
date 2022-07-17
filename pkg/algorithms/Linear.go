@@ -1,18 +1,24 @@
 package algorithms
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Linear - Linear alg which dependent on the current strokes
 type Linear struct {
-	IncreaseBy int
-	ReduceBy   int
+	IncreaseBy int `json:"increase_by"`
+	ReduceBy   int `json:"reduce_by"`
 }
 
-func (l Linear) Name() string {
+func (l *Linear) Name() string {
+	return "Linear"
+}
+
+func (l *Linear) ToString() string {
 	return fmt.Sprintf("Linear: Increase by: %d, Reduce by: %d", l.IncreaseBy, l.ReduceBy)
 }
 
-func (l Linear) Adjust(condition Condition) Result {
+func (l *Linear) Adjust(condition Condition) Result {
 	previousVolume := condition.PreviousVolumes[len(condition.PreviousVolumes)-1]
 	volume := previousVolume
 	if condition.CurrentStrokes > condition.PreviousStrokes[len(condition.PreviousStrokes)-1] {
@@ -28,11 +34,15 @@ type LinearDependentOnAverageCPM struct {
 	Linear
 }
 
-func (l LinearDependentOnAverageCPM) Name() string {
+func (l *LinearDependentOnAverageCPM) Name() string {
+	return "LinearDependentOnAverageCPM"
+}
+
+func (l *LinearDependentOnAverageCPM) ToString() string {
 	return fmt.Sprintf("LinearDependentOnAverageCPM: Increase by: %d, Reduce by: %d", l.IncreaseBy, l.ReduceBy)
 }
 
-func (l LinearDependentOnAverageCPM) Adjust(condition Condition) Result {
+func (l *LinearDependentOnAverageCPM) Adjust(condition Condition) Result {
 	volume := condition.PreviousVolumes[len(condition.PreviousVolumes)-1]
 	if condition.CurrentStrokes > condition.AverageCPM {
 		volume += l.IncreaseBy
@@ -45,14 +55,18 @@ func (l LinearDependentOnAverageCPM) Adjust(condition Condition) Result {
 // LinearDependentOnMean - Linear alg which dependent on the mean strokes of a certain timeFrame
 type LinearDependentOnMean struct {
 	Linear
-	TimeFrame int
+	TimeFrame int `json:"time_frame"`
 }
 
-func (l LinearDependentOnMean) Name() string {
+func (l *LinearDependentOnMean) Name() string {
+	return "LinearDependentOnMean"
+}
+
+func (l *LinearDependentOnMean) ToString() string {
 	return fmt.Sprintf("LinearDependentOnMean: Increase by: %d, Reduce by: %d", l.IncreaseBy, l.ReduceBy)
 }
 
-func (l LinearDependentOnMean) Adjust(condition Condition) Result {
+func (l *LinearDependentOnMean) Adjust(condition Condition) Result {
 	previousStrokesLength := len(condition.PreviousStrokes)
 	if previousStrokesLength > l.TimeFrame {
 		previousStrokesLength = l.TimeFrame
