@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/bevzzz/audioslave/keyboard"
+	"github.com/bevzzz/audioslave/volume"
 	"os"
 	"os/signal"
 	"syscall"
@@ -9,9 +11,9 @@ import (
 
 func main() {
 	conf := parseCommand()
-	kc := NewKeystrokeCounter()
+	kc := keyboard.NewKeystrokeCounter()
 
-	countStrokes := kc.Count(NewDefaultTicker(conf.Interval))
+	countStrokes := kc.Count(keyboard.NewDefaultTicker(conf.Interval))
 	defer kc.Stop()
 
 	go func() {
@@ -22,9 +24,9 @@ func main() {
 		os.Exit(1)
 	}()
 
-	vc := &ItchynyVolumeController{}
+	vc := &volume.ItchynyVolumeController{}
 
-	output := NewOutput(conf.Window, conf.Interval, conf.AverageCpm, vc, conf.MinVolume)
+	output := volume.NewOutput(conf.Window, conf.Interval, conf.AverageCpm, vc, conf.MinVolume)
 
 	for {
 		n, ok := <-countStrokes

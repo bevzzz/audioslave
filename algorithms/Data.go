@@ -1,8 +1,8 @@
-package algorithm
+package algorithms
 
 import "time"
 
-// Condition - Values for the algorithm to calculate the new value
+// Condition - Values for the algorithms to calculate the new value
 type Condition struct {
 	AverageCPM int // average CPM
 

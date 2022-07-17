@@ -1,4 +1,4 @@
-package algorithm
+package algorithms
 
 // Algorithm - Interface for implementing algorithms
 type Algorithm interface {

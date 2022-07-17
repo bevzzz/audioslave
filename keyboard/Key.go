@@ -1,8 +1,4 @@
-package main
-
-type KeyLogger interface {
-	GetKey() Key
-}
+package keyboard
 
 // Key is a single key entered by the user
 type Key struct {

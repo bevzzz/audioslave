@@ -1,7 +1,7 @@
 //go:build linux
 // +build linux
 
-package main
+package keyboard
 
 // NewKeyLogger creates a new keylogger depending on
 // the platform we are running on (currently only Windows
