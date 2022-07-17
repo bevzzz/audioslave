@@ -6,7 +6,8 @@ type Algorithm interface {
 	Adjust(condition Condition) Result // Algorithm apply function
 }
 
-func VolumeSetBoundaries(min, max, volume int) int {
+// Clamp - set the boundaries
+func Clamp(min, max, volume int) int {
 	if volume > max {
 		volume = max
 	}
@@ -14,4 +15,25 @@ func VolumeSetBoundaries(min, max, volume int) int {
 		volume = min
 	}
 	return volume
+}
+
+// CalculateMean - calculates the mean
+func CalculateMean(values ...int) int {
+	mean := 0
+	for _, value := range values {
+		mean += value
+	}
+	return mean / len(values)
+}
+
+// MapToRange - Maps a value between 0-1 to a value between the range given
+func MapToRange(min, max, value int) int {
+	if value < 0 {
+		value = 0
+	} else if value > 1 {
+		value /= 100
+	}
+
+	r := max - min
+	return (r * value) + min
 }
