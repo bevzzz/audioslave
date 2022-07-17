@@ -27,7 +27,7 @@ func CalculateMean(values ...int) int {
 }
 
 // MapToRange - Maps a value between 0-1 to a value between the range given
-func MapToRange(min, max, value int) int {
+func MapToRange(min, max int, value float64) int {
 	if value < 0 {
 		value = 0
 	} else if value > 1 {
@@ -35,5 +35,5 @@ func MapToRange(min, max, value int) int {
 	}
 
 	r := max - min
-	return (r * value) + min
+	return int(float64(r)*value) + min
 }
