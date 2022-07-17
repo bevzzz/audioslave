@@ -1,7 +1,6 @@
 # audioslave
 
-![go build](https://github.com/bevzzz/audioslave/actions/workflows/go.yml/badge.svg?branch=master)
-
+[![Tests](https://github.com/bevzzz/audioslave/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/bevzzz/audioslave/actions/workflows/tests.yml)
 
 ## Description
 Listening to music while working is func. Sometimes, however, while writing code, emails, a message to your colleague, or a piece of documentation, you might wish that it was just a bit quiter.  
