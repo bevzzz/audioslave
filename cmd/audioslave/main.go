@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/bevzzz/audioslave/config"
-	"github.com/bevzzz/audioslave/keyboard"
-	"github.com/bevzzz/audioslave/volume"
+	keyboard2 "github.com/bevzzz/audioslave/internal/keyboard"
+	"github.com/bevzzz/audioslave/internal/volume"
+	"github.com/bevzzz/audioslave/pkg/config"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,9 +12,9 @@ import (
 
 func main() {
 	conf := config.ParseCommand()
-	kc := keyboard.NewKeystrokeCounter()
+	kc := keyboard2.NewKeystrokeCounter()
 
-	countStrokes := kc.Count(keyboard.NewDefaultTicker(conf.Interval))
+	countStrokes := kc.Count(keyboard2.NewDefaultTicker(conf.Interval))
 	defer kc.Stop()
 
 	go func() {
