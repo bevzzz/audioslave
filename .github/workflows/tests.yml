@@ -16,7 +16,6 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
-      - run: go mod download
       - run: go test -v ./...
   build:
     strategy:
