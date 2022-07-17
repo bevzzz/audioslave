@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/bevzzz/audioslave"
 	"github.com/bevzzz/audioslave/internal/keyboard"
+	"github.com/bevzzz/audioslave/internal/util"
 	"github.com/bevzzz/audioslave/internal/volume"
 	"github.com/bevzzz/audioslave/pkg/algorithms"
 	"github.com/bevzzz/audioslave/pkg/config"
@@ -16,6 +17,9 @@ import (
 
 func main() {
 	conf := config.ParseCommand()
+	if conf.Verbose {
+		log.Printf("Commands parsed:\n%s\n", util.PrettyPrint(conf))
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 
 	as := audioslave.AudioSlave{
@@ -23,7 +27,7 @@ func main() {
 		VolumeController: &volume.ItchynyVolumeController{},
 		Config: config.Application{
 			Config: *conf,
-			// TODO: determine alg by conf
+			// Default algs
 			ReduceAlg: &algorithms.Linear{
 				IncreaseBy: 5,
 				ReduceBy:   5,

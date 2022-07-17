@@ -65,6 +65,14 @@ func (a *Application) Read() error {
 }
 
 func (a *Application) Write() error {
+	data, err := a.ToJson()
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(a.Config.Path, data, 0644)
+}
+
+func (a *Application) ToJson() ([]byte, error) {
 	// embed alg
 	applicationEmbed := &Application{
 		Config: a.Config,
@@ -78,9 +86,5 @@ func (a *Application) Write() error {
 		}{a.IncreaseAlg, a.IncreaseAlg.Name()},
 	}
 
-	data, err := json.MarshalIndent(applicationEmbed, "", " ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(a.Config.Path, data, 0644)
+	return json.MarshalIndent(applicationEmbed, "", " ")
 }

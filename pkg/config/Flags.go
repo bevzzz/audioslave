@@ -14,6 +14,7 @@ type Config struct {
 	MaxVolume        int
 	AverageCpm       int
 	Interval, Window time.Duration
+	Verbose          bool
 }
 
 // ParseCommand - parses the command from the cli
@@ -25,6 +26,7 @@ func ParseCommand() *Config {
 		AverageCpm: 0,
 		Interval:   time.Second,
 		Window:     10 * time.Second,
+		Verbose:    false,
 	}
 
 	minVolume := flag.Int("min-volume", config.MinVolume, "set the minimum volume")
@@ -32,7 +34,8 @@ func ParseCommand() *Config {
 	averageCpm := flag.Int("average-cpm", config.AverageCpm, "set your average typing speed")
 	interval := flag.Duration("interval", config.Interval, "change output every N seconds")
 	window := flag.Duration("window", config.Window, "change output based on last N values")
-	path := flag.String("path", config.Path, "config path")
+	path := flag.String("path", config.Path, "config path to safe and load")
+	verbose := flag.Bool("verbose", config.Verbose, "verbose logs")
 
 	flag.Parse()
 
@@ -42,6 +45,7 @@ func ParseCommand() *Config {
 	config.AverageCpm = *averageCpm
 	config.Interval = *interval
 	config.Window = *window
+	config.Verbose = *verbose
 
 	return config
 }
