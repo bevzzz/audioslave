@@ -24,11 +24,11 @@ func main() {
 		Config: config.Application{
 			Config: *conf,
 			// TODO: determine alg by conf
-			ReduceAlg: algorithms.Linear{
+			ReduceAlg: &algorithms.Linear{
 				IncreaseBy: 5,
 				ReduceBy:   5,
 			},
-			IncreaseAlg: algorithms.Linear{
+			IncreaseAlg: &algorithms.Linear{
 				IncreaseBy: 5,
 				ReduceBy:   5,
 			},

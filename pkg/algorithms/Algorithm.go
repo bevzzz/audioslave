@@ -4,6 +4,7 @@ package algorithms
 type Algorithm interface {
 	Name() string                      // Algorithm name
 	Adjust(condition Condition) Result // Algorithm apply function
+	ToString() string                  // To String
 }
 
 // Clamp - set the boundaries
@@ -36,4 +37,17 @@ func MapToRange(min, max int, value float64) int {
 
 	r := max - min
 	return int(float64(r)*value) + min
+}
+
+func AlgorithmByName(name string) Algorithm {
+	switch name {
+	case "Linear":
+		return &Linear{}
+	case "LinearDependentOnAverageCPM":
+		return &LinearDependentOnAverageCPM{}
+	case "LinearDependentOnMean":
+		return &LinearDependentOnMean{}
+	default:
+		return nil
+	}
 }
