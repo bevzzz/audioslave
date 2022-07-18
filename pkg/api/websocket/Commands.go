@@ -5,12 +5,13 @@ import "fmt"
 type CommandType string
 
 var (
-	ACKCommand    CommandType = "ACK"
-	ERRCommand    CommandType = "ERR"
-	ALGCommand    CommandType = "ALG"
-	STOPCommand   CommandType = "STOP"
-	PAUSECommand  CommandType = "PAUSE"
-	RESUMECommand CommandType = "RESUME"
+	ACKCommand          CommandType = "ACK"
+	ERRCommand          CommandType = "ERR"
+	ALGCommand          CommandType = "ALG"
+	STOPCommand         CommandType = "STOP"
+	PAUSECommand        CommandType = "PAUSE"
+	RESUMECommand       CommandType = "RESUME"
+	RELOADCONFIGCommand CommandType = "RELOADCONFIG"
 )
 
 var (

@@ -109,6 +109,8 @@ func (w *Websocket) ProcessCommand(command Command, cancel context.CancelFunc) (
 		w.Application.Pause()
 	case RESUMECommand:
 		w.Application.Resume()
+	case RELOADCONFIGCommand:
+		w.Application.ReloadConfig()
 	default:
 	}
 	return &ACK, nil

@@ -12,18 +12,18 @@ import (
 )
 
 type AudioSlave struct {
-	KeystrokeCounter keyboard.KeystrokeCounter
-	VolumeController volume.VolumeController
-	Config           *config.Application
-	ReloadConfig     chan bool
-	PauseApplication chan bool
+	KeystrokeCounter        keyboard.KeystrokeCounter
+	VolumeController        volume.VolumeController
+	Config                  *config.Application
+	ReloadConfigChannel     chan bool
+	PauseApplicationChannel chan bool
 }
 
 // Start - starts the audioslave
 func (s *AudioSlave) Start(ctx context.Context) error {
 	s.HandleConfig()
-	s.PauseApplication = make(chan bool)
-	s.ReloadConfig = make(chan bool)
+	s.PauseApplicationChannel = make(chan bool)
+	s.ReloadConfigChannel = make(chan bool)
 	countStrokes := s.KeystrokeCounter.Count(keyboard.NewDefaultTicker(s.Config.Config.Interval))
 	output := volume.NewOutput(s.Config.Config.Window, s.Config.Config.Interval,
 		s.Config.Config.AverageCpm, s.VolumeController, s.Config.Config.MinVolume)
@@ -32,9 +32,9 @@ func (s *AudioSlave) Start(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return nil
-		case pause = <-s.PauseApplication:
+		case pause = <-s.PauseApplicationChannel:
 			// pause application
-		case <-s.ReloadConfig:
+		case <-s.ReloadConfigChannel:
 			// reload config
 			s.HandleConfig()
 			countStrokes = s.KeystrokeCounter.Count(keyboard.NewDefaultTicker(s.Config.Config.Interval))
@@ -101,9 +101,13 @@ func (s *AudioSlave) ChangeAlg(name string, data any, increase bool, reduce bool
 }
 
 func (s *AudioSlave) Pause() {
-	s.PauseApplication <- true
+	s.PauseApplicationChannel <- true
 }
 
 func (s *AudioSlave) Resume() {
-	s.PauseApplication <- false
+	s.PauseApplicationChannel <- false
+}
+
+func (s *AudioSlave) ReloadConfig() {
+	s.ReloadConfigChannel <- true
 }
