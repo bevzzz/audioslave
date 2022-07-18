@@ -5,10 +5,12 @@ import "fmt"
 type CommandType string
 
 var (
-	ACKCommand  CommandType = "ACK"
-	ERRCommand  CommandType = "ERR"
-	ALGCommand  CommandType = "ALG"
-	STOPCommand CommandType = "STOP"
+	ACKCommand    CommandType = "ACK"
+	ERRCommand    CommandType = "ERR"
+	ALGCommand    CommandType = "ALG"
+	STOPCommand   CommandType = "STOP"
+	PAUSECommand  CommandType = "PAUSE"
+	RESUMECommand CommandType = "RESUME"
 )
 
 var (
@@ -42,8 +44,7 @@ func (c *Command) Decode() error {
 		if !ok {
 			return fmt.Errorf("could not convert")
 		}
-	case STOPCommand:
-		// no payload needed
+	default:
 	}
 	return nil
 }

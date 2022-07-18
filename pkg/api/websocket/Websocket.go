@@ -105,6 +105,10 @@ func (w *Websocket) ProcessCommand(command Command, cancel context.CancelFunc) (
 		if err != nil {
 			return nil, err
 		}
+	case PAUSECommand:
+		w.Application.Pause()
+	case RESUMECommand:
+		w.Application.Resume()
 	default:
 	}
 	return &ACK, nil
