@@ -8,6 +8,7 @@ import (
 	"github.com/bevzzz/audioslave/internal/util"
 	"github.com/bevzzz/audioslave/internal/volume"
 	"github.com/bevzzz/audioslave/pkg/algorithms"
+	"github.com/bevzzz/audioslave/pkg/api/websocket"
 	"github.com/bevzzz/audioslave/pkg/config"
 	"log"
 	"os"
@@ -22,7 +23,7 @@ func main() {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 
-	as := audioslave.AudioSlave{
+	as := &audioslave.AudioSlave{
 		KeystrokeCounter: keyboard.NewKeystrokeCounter(),
 		VolumeController: &volume.ItchynyVolumeController{},
 		Config: config.Application{
@@ -50,8 +51,25 @@ func main() {
 		os.Exit(0)
 	}()
 	log.Println("Starting application...")
-	err := as.Start(ctx)
-	if err != nil {
-		log.Fatal(err)
+	w := websocket.Websocket{
+		Application: as,
+		Port:        "10001",
 	}
+	go func() {
+		err := w.Start(ctx)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+	audioslave.Doit()
+	for {
+
+	}
+	/*
+		err := as.Start(ctx)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+	*/
 }
