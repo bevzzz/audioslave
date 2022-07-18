@@ -15,6 +15,7 @@ type Websocket struct {
 	Upgrader    websocket.Upgrader
 }
 
+// Start - starts the websocket API and the application
 func (w *Websocket) Start(ctx context.Context) error {
 	w.Upgrader = websocket.Upgrader{} // use default options
 	ctx, cancel := context.WithCancel(ctx)
@@ -34,6 +35,7 @@ func (w *Websocket) Start(ctx context.Context) error {
 	return nil
 }
 
+// socketHandler - handler func for incoming request
 func (w *Websocket) socketHandler(ctx context.Context, cancel context.CancelFunc) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		conn, err := w.Upgrader.Upgrade(writer, request, nil)
@@ -41,9 +43,9 @@ func (w *Websocket) socketHandler(ctx context.Context, cancel context.CancelFunc
 			return
 		}
 		defer func() {
-			cancel()
 			err := conn.Close()
 			log.Println(err)
+			cancel()
 		}()
 		conn.SetPingHandler(nil)
 		for {
@@ -53,30 +55,35 @@ func (w *Websocket) socketHandler(ctx context.Context, cancel context.CancelFunc
 			default:
 			}
 			command := &Command{}
+			// read json
 			err := conn.ReadJSON(command)
 			if err != nil {
 				log.Println(err)
 				conn.WriteJSON(&ERR)
 				continue
 			}
+			// write ack
 			err = conn.WriteJSON(&ACK)
 			if err != nil {
 				log.Println(err)
 				conn.WriteJSON(&ERR)
 				return
 			}
+			// decode command
 			err = command.Decode()
 			if err != nil {
 				log.Println(err)
 				conn.WriteJSON(&ERR)
 				continue
 			}
+			// process command
 			resp, err := w.ProcessCommand(*command, cancel)
 			if err != nil {
 				log.Println(err)
 				conn.WriteJSON(&ERR)
 				continue
 			}
+			// write resp. ack or data structure
 			err = conn.WriteJSON(&resp)
 			if err != nil {
 				log.Println(err)
@@ -87,10 +94,24 @@ func (w *Websocket) socketHandler(ctx context.Context, cancel context.CancelFunc
 	}
 }
 
-func (w Websocket) ProcessCommand(command Command, cancel context.CancelFunc) (interface{}, error) {
-	return nil, nil
+// ProcessCommand - Process a command and returns a response
+func (w *Websocket) ProcessCommand(command Command, cancel context.CancelFunc) (any, error) {
+	switch command.Type {
+	case STOPCommand:
+		w.Stop()
+		cancel()
+	case ALGCommand:
+		payload := command.Payload.(commandAlg)
+		err := w.Application.ChangeAlg(payload.Type, payload.Data, payload.Increase, payload.Reduce)
+		if err != nil {
+			return nil, err
+		}
+	default:
+	}
+	return &ACK, nil
 }
 
-func (w Websocket) Stop() {
+// Stop - stops the application underneath
+func (w *Websocket) Stop() {
 	w.Application.Stop()
 }

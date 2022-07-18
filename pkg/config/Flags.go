@@ -28,7 +28,7 @@ func ParseCommand() *Config {
 		Interval:   time.Second,
 		Window:     10 * time.Second,
 		Verbose:    false,
-		Mode:       "cli",
+		Mode:       "websocket",
 	}
 
 	minVolume := flag.Int("min-volume", config.MinVolume, "set the minimum volume")

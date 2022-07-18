@@ -26,7 +26,7 @@ func main() {
 	as := &audioslave.AudioSlave{
 		KeystrokeCounter: keyboard.NewKeystrokeCounter(),
 		VolumeController: &volume.ItchynyVolumeController{},
-		Config: config.Application{
+		Config: &config.Application{
 			Config: *conf,
 			// Default algs
 			ReduceAlg: &algorithms.Linear{
@@ -55,21 +55,16 @@ func main() {
 		Application: as,
 		Port:        "10001",
 	}
-	go func() {
-		err := w.Start(ctx)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
-	audioslave.Doit()
-	for {
-
+	var err error
+	switch conf.Mode {
+	case "cli":
+		err = as.Start(ctx)
+	case "websocket":
+		err = w.Start(ctx)
+	default:
+		log.Fatalf("mode %s not found", conf.Mode)
 	}
-	/*
-		err := as.Start(ctx)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-	*/
+	if err != nil {
+		log.Fatal(err)
+	}
 }
