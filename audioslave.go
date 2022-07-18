@@ -81,5 +81,6 @@ func (s *AudioSlave) ChangeAlg(name string, data any, increase bool, reduce bool
 	if reduce {
 		s.Config.ReduceAlg = newAlgo
 	}
+	s.Config.Write()
 	return nil
 }
