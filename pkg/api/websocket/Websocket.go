@@ -47,7 +47,6 @@ func (w *Websocket) socketHandler(ctx context.Context, cancel context.CancelFunc
 			log.Println(err)
 			cancel()
 		}()
-		conn.SetPingHandler(nil)
 		for {
 			select {
 			case <-ctx.Done():
