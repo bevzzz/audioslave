@@ -2,30 +2,47 @@ package audioslave
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/bevzzz/audioslave/internal/keyboard"
 	"github.com/bevzzz/audioslave/internal/volume"
+	"github.com/bevzzz/audioslave/pkg/algorithms"
 	"github.com/bevzzz/audioslave/pkg/config"
 	"log"
 )
 
 type AudioSlave struct {
-	KeystrokeCounter keyboard.KeystrokeCounter
-	VolumeController volume.VolumeController
-	Config           config.Application
+	KeystrokeCounter        keyboard.KeystrokeCounter
+	VolumeController        volume.VolumeController
+	Config                  *config.Application
+	ReloadConfigChannel     chan bool
+	PauseApplicationChannel chan bool
 }
 
 // Start - starts the audioslave
-func (s AudioSlave) Start(ctx context.Context) error {
+func (s *AudioSlave) Start(ctx context.Context) error {
+	s.HandleConfig()
+	s.PauseApplicationChannel = make(chan bool)
+	s.ReloadConfigChannel = make(chan bool)
 	countStrokes := s.KeystrokeCounter.Count(keyboard.NewDefaultTicker(s.Config.Config.Interval))
 	output := volume.NewOutput(s.Config.Config.Window, s.Config.Config.Interval,
 		s.Config.Config.AverageCpm, s.VolumeController, s.Config.Config.MinVolume)
-	s.HandleConfig()
 	for {
+		pause := false
 		select {
 		case <-ctx.Done():
 			return nil
+		case pause = <-s.PauseApplicationChannel:
+			// pause application
+		case <-s.ReloadConfigChannel:
+			// reload config
+			s.HandleConfig()
+			countStrokes = s.KeystrokeCounter.Count(keyboard.NewDefaultTicker(s.Config.Config.Interval))
+			output = volume.NewOutput(s.Config.Config.Window, s.Config.Config.Interval,
+				s.Config.Config.AverageCpm, s.VolumeController, s.Config.Config.MinVolume)
 		default:
+		}
+		if !pause {
 			n, ok := <-countStrokes
 			if !ok {
 				output.Reset()
@@ -37,7 +54,7 @@ func (s AudioSlave) Start(ctx context.Context) error {
 }
 
 // HandleConfig - handles the reading and saving of the config
-func (s AudioSlave) HandleConfig() {
+func (s *AudioSlave) HandleConfig() {
 	err := s.Config.Read()
 	if err != nil && s.Config.Config.Verbose {
 		log.Println("No config found")
@@ -57,7 +74,40 @@ func (s AudioSlave) HandleConfig() {
 }
 
 // Stop - stops the audioslave
-func (s AudioSlave) Stop() {
+func (s *AudioSlave) Stop() {
 	s.KeystrokeCounter.Stop()
 
+}
+
+// ChangeAlg - changes algorithm
+func (s *AudioSlave) ChangeAlg(name string, data any, increase bool, reduce bool) error {
+	newAlgo := algorithms.AlgorithmByName(name)
+	dataRaw, err := json.Marshal(&data)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(dataRaw, &newAlgo)
+	if err != nil {
+		return err
+	}
+	if increase {
+		s.Config.IncreaseAlg = newAlgo
+	}
+	if reduce {
+		s.Config.ReduceAlg = newAlgo
+	}
+	s.Config.Write()
+	return nil
+}
+
+func (s *AudioSlave) Pause() {
+	s.PauseApplicationChannel <- true
+}
+
+func (s *AudioSlave) Resume() {
+	s.PauseApplicationChannel <- false
+}
+
+func (s *AudioSlave) ReloadConfig() {
+	s.ReloadConfigChannel <- true
 }

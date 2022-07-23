@@ -14,6 +14,7 @@ type Config struct {
 	MaxVolume        int
 	AverageCpm       int
 	Interval, Window time.Duration
+	Mode             string
 	Verbose          bool
 }
 
@@ -27,6 +28,7 @@ func ParseCommand() *Config {
 		Interval:   time.Second,
 		Window:     10 * time.Second,
 		Verbose:    false,
+		Mode:       "websocket",
 	}
 
 	minVolume := flag.Int("min-volume", config.MinVolume, "set the minimum volume")
@@ -36,6 +38,7 @@ func ParseCommand() *Config {
 	window := flag.Duration("window", config.Window, "change output based on last N values")
 	path := flag.String("path", config.Path, "config path to safe and load")
 	verbose := flag.Bool("verbose", config.Verbose, "verbose logs")
+	mode := flag.String("mode", config.Mode, "application mode")
 
 	flag.Parse()
 
@@ -46,6 +49,7 @@ func ParseCommand() *Config {
 	config.Interval = *interval
 	config.Window = *window
 	config.Verbose = *verbose
+	config.Mode = *mode
 
 	return config
 }
